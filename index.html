@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+<title>일차방정식 연습</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Malgun Gothic',sans-serif;
+  background:#f0f4f8;min-height:100vh;padding-top:42px;}
+
+/* ── 타이머바 ── */
+#timerbar{position:fixed;top:0;left:0;right:0;height:42px;
+  background:linear-gradient(90deg,#1d4ed8,#7c3aed);
+  color:#fff;display:flex;align-items:center;justify-content:space-between;
+  padding:0 16px;z-index:300;box-shadow:0 2px 8px rgba(0,0,0,.2);}
+#timerbar .tb-left{font-size:13px;font-weight:700;opacity:.9;}
+#timerbar .tb-mid{font-size:20px;font-weight:900;letter-spacing:2px;}
+#timerbar .tb-right{font-size:12px;font-weight:600;opacity:.85;}
+
+/* ── 헤더 ── */
+.hd{background:linear-gradient(135deg,#1d4ed8,#7c3aed);color:#fff;padding:16px 18px 14px;}
+.hd h1{font-size:18px;font-weight:900;margin-bottom:3px;}
+.hd p{font-size:12px;opacity:.8;}
+.prog-wrap{margin-top:10px;}
+.prog-lbl{display:flex;justify-content:space-between;font-size:12px;opacity:.9;margin-bottom:5px;}
+.prog-bar{background:rgba(255,255,255,.3);border-radius:99px;height:7px;}
+.prog-fill{background:#fff;height:100%;border-radius:99px;transition:width .4s;}
+
+/* ── 레벨 탭 ── */
+.ltabs{display:flex;background:#fff;border-bottom:1px solid #e2e8f0;padding:0 12px;
+  position:sticky;top:42px;z-index:200;box-shadow:0 1px 4px rgba(0,0,0,.06);}
+.ltab{padding:10px 14px;font-size:13px;font-weight:600;color:#64748b;cursor:pointer;
+  border-bottom:2.5px solid transparent;white-space:nowrap;}
+.ltab.on{color:#1d4ed8;border-color:#1d4ed8;}
+.ltab .cnt{display:inline-block;background:#e2e8f0;color:#64748b;font-size:10px;
+  font-weight:700;padding:1px 6px;border-radius:99px;margin-left:4px;}
+.ltab.on .cnt{background:#dbeafe;color:#1d4ed8;}
+
+/* ── 문제 카드 ── */
+.qwrap{padding:12px;display:flex;flex-direction:column;gap:10px;padding-bottom:30px;}
+.qcard{background:#fff;border-radius:14px;border:1.5px solid #e2e8f0;overflow:hidden;
+  box-shadow:0 1px 8px rgba(0,0,0,.06);transition:border-color .2s;}
+.qcard.correct{border-color:#86efac;}
+.qcard.wrong{border-color:#fca5a5;}
+.qcard.locked{opacity:.55;pointer-events:none;}
+
+/* 잠금 배지 */
+.lock-badge{display:flex;align-items:center;justify-content:center;gap:6px;
+  padding:10px;background:#f1f5f9;font-size:13px;color:#64748b;font-weight:600;}
+
+.qhead{display:flex;align-items:center;gap:8px;padding:12px 14px 0;}
+.qnum{width:30px;height:30px;border-radius:50%;background:#1d4ed8;color:#fff;
+  font-size:13px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.qnum.mid{background:#059669;} .qnum.high{background:#7c3aed;}
+.qlv{font-size:10px;font-weight:700;padding:2px 7px;border-radius:99px;margin-left:auto;}
+.qlv.low{background:#dbeafe;color:#1d4ed8;}
+.qlv.mid{background:#d1fae5;color:#059669;}
+.qlv.high{background:#ede9fe;color:#7c3aed;}
+
+.qbody{padding:10px 14px 14px;}
+.qtxt{font-size:15px;color:#0f172a;line-height:1.7;margin-bottom:10px;font-weight:500;}
+.qtxt .eq{font-family:'Courier New',monospace;font-size:16px;font-weight:700;
+  color:#1d4ed8;background:#eff6ff;padding:4px 10px;border-radius:7px;
+  display:inline-block;margin:3px 0;}
+.hint{font-size:12px;color:#64748b;background:#f8fafc;border-left:3px solid #cbd5e1;
+  padding:5px 9px;border-radius:0 6px 6px 0;margin-bottom:10px;}
+
+/* 답 입력 */
+.ans-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:0;}
+.ans-lbl{font-size:13px;font-weight:700;color:#374151;white-space:nowrap;}
+.ans-prefix{font-size:15px;font-weight:700;color:#374151;}
+.ans-inp{border:1.5px solid #c7d2e8;border-radius:8px;padding:9px 12px;
+  font-size:16px;font-weight:700;color:#0f172a;width:90px;text-align:center;
+  outline:none;background:#fff;transition:border-color .15s;}
+.ans-inp:focus{border-color:#1d4ed8;box-shadow:0 0 0 3px rgba(29,78,216,.1);}
+.ans-inp.correct{border-color:#22c55e;background:#f0fdf4;color:#166534;}
+.ans-inp.wrong{border-color:#ef4444;background:#fef2f2;color:#991b1b;}
+.chkbtn{padding:9px 18px;font-size:14px;font-weight:800;border:none;
+  border-radius:8px;cursor:pointer;background:#1d4ed8;color:#fff;white-space:nowrap;
+  transition:opacity .15s;}
+.chkbtn:hover{opacity:.88;} .chkbtn:disabled{background:#93c5fd;cursor:not-allowed;}
+
+/* 결과 */
+.result{margin-top:10px;padding:9px 12px;border-radius:8px;font-size:13px;
+  font-weight:600;display:none;line-height:1.65;}
+.result.ok{background:#f0fdf4;color:#166534;display:block;}
+.result.ng{background:#fef2f2;color:#991b1b;display:block;}
+
+/* 풀이 노트 */
+.note-toggle{display:flex;align-items:center;gap:5px;margin-top:10px;
+  font-size:12.5px;color:#64748b;cursor:pointer;user-select:none;width:fit-content;}
+.note-toggle .arr{transition:transform .2s;font-size:10px;}
+.note-toggle.open .arr{transform:rotate(90deg);}
+.note-area{display:none;margin-top:7px;}
+.note-area.open{display:block;}
+.note-toolbar{display:flex;gap:5px;padding:5px 8px;background:#fefce8;
+  border:1.5px solid #fde68a;border-bottom:none;border-radius:8px 8px 0 0;
+  align-items:center;flex-wrap:wrap;}
+.psz{width:26px;height:26px;border-radius:50%;border:2px solid #fde68a;
+  background:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+.psz.on{border-color:#f59e0b;background:#fef3c7;}
+.pdot{background:#0f172a;border-radius:50%;pointer-events:none;}
+.clr-btn2{padding:3px 8px;font-size:11px;font-weight:700;border:1px solid #fde68a;
+  border-radius:6px;background:#fff;cursor:pointer;color:#78350f;margin-left:auto;}
+.cbtn{width:20px;height:20px;border-radius:50%;border:2.5px solid #e2e8f0;cursor:pointer;}
+.cbtn.on{border-color:#374151;transform:scale(1.2);}
+.note-cv-wrap{background:#fffef7;border:1.5px solid #fde68a;border-radius:0 0 8px 8px;
+  overflow:hidden;}
+.note-cv{display:block;cursor:crosshair;touch-action:none;width:100%;}
+
+/* ── 완성 팝업 ── */
+#popup{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);
+  z-index:9999;align-items:center;justify-content:center;}
+.popup-box{background:#fff;border-radius:22px;padding:28px 24px 22px;
+  max-width:340px;width:92%;text-align:center;
+  box-shadow:0 10px 50px rgba(0,0,0,.25);animation:popIn .35s ease;}
+@keyframes popIn{from{transform:scale(.85);opacity:0}to{transform:scale(1);opacity:1}}
+.pop-trophy{font-size:56px;margin-bottom:6px;}
+.pop-title{font-size:21px;font-weight:900;color:#0f172a;margin-bottom:4px;}
+.pop-sub{font-size:13px;color:#64748b;margin-bottom:18px;}
+.pop-time-box{background:linear-gradient(135deg,#eff6ff,#ede9fe);
+  border-radius:14px;padding:16px;margin-bottom:16px;}
+.pop-time-lbl{font-size:12px;color:#64748b;margin-bottom:4px;}
+.pop-time{font-size:42px;font-weight:900;color:#1d4ed8;letter-spacing:3px;}
+.pop-laps{text-align:left;background:#f8fafc;border-radius:10px;
+  padding:10px 14px;margin-bottom:16px;font-size:13px;line-height:2;}
+.pop-laps span{font-weight:700;color:#1d4ed8;}
+.pop-close{width:100%;padding:13px;font-size:15px;font-weight:800;
+  background:#1d4ed8;color:#fff;border:none;border-radius:11px;cursor:pointer;}
+.pop-close:hover{background:#1e40af;}
+</style>
+</head>
+<body>
+
+<!-- 타이머바 -->
+<div id="timerbar">
+  <div class="tb-left">⏱ 풀이 시간</div>
+  <div class="tb-mid" id="tmr">00:00</div>
+  <div class="tb-right" id="tmr-stat">0 / 20 완료</div>
+</div>
+
+<!-- 헤더 -->
+<div class="hd">
+  <h1>📘 일차방정식 연습</h1>
+  <p>중학교 1학년 수학 · 20문항 (하 10 / 중 5 / 상 5) · 모두 주관식</p>
+  <div class="prog-wrap">
+    <div class="prog-lbl">
+      <span id="pg-txt">0 / 20 풀이 완료</span>
+      <span id="pg-score">정답 0개</span>
+    </div>
+    <div class="prog-bar"><div class="prog-fill" id="pg-fill" style="width:0%"></div></div>
+  </div>
+</div>
+
+<!-- 레벨 탭 -->
+<div class="ltabs">
+  <div class="ltab on" onclick="setFilter('all')">전체 <span class="cnt">20</span></div>
+  <div class="ltab" onclick="setFilter('low')">하 <span class="cnt">10</span></div>
+  <div class="ltab" onclick="setFilter('mid')">중 <span class="cnt">5</span></div>
+  <div class="ltab" onclick="setFilter('high')">상 <span class="cnt">5</span></div>
+</div>
+
+<div class="qwrap" id="qwrap"></div>
+
+<!-- 완성 팝업 -->
+<div id="popup">
+  <div class="popup-box">
+    <div class="pop-trophy">🏆</div>
+    <div class="pop-title">20문항 모두 완성!</div>
+    <div class="pop-sub">일차방정식을 완벽하게 풀었어요</div>
+    <div class="pop-time-box">
+      <div class="pop-time-lbl">⏱ 총 소요 시간</div>
+      <div class="pop-time" id="pop-total">00:00</div>
+    </div>
+    <div class="pop-laps" id="pop-laps"></div>
+    <button class="pop-close" onclick="closePopup()">닫기</button>
+  </div>
+</div>
+
+<script>
+// ============================================================
+//  문제 데이터 20문항
+// ============================================================
+const QS = [
+  // ── 하(1~10) ──
+  {id:1,  lv:'low',  q:'x + 3 = 7',           ans:'4',   hint:'양변에서 3을 빼세요.', sol:'x = 7 - 3 = 4'},
+  {id:2,  lv:'low',  q:'x - 5 = 2',            ans:'7',   hint:'양변에 5를 더하세요.', sol:'x = 2 + 5 = 7'},
+  {id:3,  lv:'low',  q:'2x = 10',              ans:'5',   hint:'양변을 2로 나누세요.', sol:'x = 10 ÷ 2 = 5'},
+  {id:4,  lv:'low',  q:'3x = 12',              ans:'4',   hint:'양변을 3으로 나누세요.', sol:'x = 12 ÷ 3 = 4'},
+  {id:5,  lv:'low',  q:'x + 7 = 15',           ans:'8',   hint:'양변에서 7을 빼세요.', sol:'x = 15 - 7 = 8'},
+  {id:6,  lv:'low',  q:'4x = 20',              ans:'5',   hint:'양변을 4로 나누세요.', sol:'x = 20 ÷ 4 = 5'},
+  {id:7,  lv:'low',  q:'x - 9 = 0',            ans:'9',   hint:'양변에 9를 더하세요.', sol:'x = 0 + 9 = 9'},
+  {id:8,  lv:'low',  q:'5x = 35',              ans:'7',   hint:'양변을 5로 나누세요.', sol:'x = 35 ÷ 5 = 7'},
+  {id:9,  lv:'low',  q:'x + 4 = 4',            ans:'0',   hint:'양변에서 4를 빼세요.', sol:'x = 4 - 4 = 0'},
+  {id:10, lv:'low',  q:'2x + 1 = 7',           ans:'3',   hint:'먼저 상수항을 이항하세요.', sol:'2x = 6 → x = 3'},
+  // ── 중(11~15) ──
+  {id:11, lv:'mid',  q:'3x - 4 = 11',          ans:'5',   hint:'먼저 -4를 이항하세요.', sol:'3x = 15 → x = 5'},
+  {id:12, lv:'mid',  q:'2x + 5 = x + 9',       ans:'4',   hint:'x항을 한쪽으로 모으세요.', sol:'x = 9 - 5 = 4'},
+  {id:13, lv:'mid',  q:'5x - 3 = 2x + 9',      ans:'4',   hint:'x항, 상수항을 각각 정리하세요.', sol:'3x = 12 → x = 4'},
+  {id:14, lv:'mid',  q:'4(x - 2) = 8',         ans:'4',   hint:'먼저 괄호를 풀어요.', sol:'4x - 8 = 8 → 4x = 16 → x = 4'},
+  {id:15, lv:'mid',  q:'2(3x - 1) = 4(x + 2)',   ans:'5',   hint:'양쪽 괄호를 모두 풀어요.', sol:'6x - 2 = 4x + 8 → 2x = 10 → x = 5'},
+  // ── 상(16~20) ──
+  {id:16, lv:'high', q:'(x+1)/2 = (x-1)/3 + 1', ans:'5', hint:'양변에 6(최소공배수)을 곱하세요.', sol:'3(x+1)=2(x-1)+6 → 3x+3=2x-2+6 → x=1 ... 재계산: 3(x+1)=2(x-1)+6 → 3x+3=2x+4 → x=1 ... 다시: 3(x+1)=2(x-1)+6 → 3x+3=2x-2+6=2x+4 → x=1', ans:'1'},
+  {id:17, lv:'high', q:'0.3x + 0.5 = 0.8x - 1', ans:'3',  hint:'양변에 10을 곱해 정수로 바꾸세요.', sol:'3x + 5 = 8x - 10 → -5x = -15 → x = 3'},
+  {id:18, lv:'high', q:'어떤 수 x의 3배에서 7을 뺀 값이\n그 수의 2배에 5를 더한 값과 같다.\nx의 값은?', ans:'12', hint:'방정식: 3x - 7 = 2x + 5', sol:'3x - 7 = 2x + 5 → x = 12'},
+  {id:19, lv:'high', q:'연속하는 두 홀수의 합이 48이다.\n두 수 중 작은 수를 x라 할 때,\nx의 값은?', ans:'23', hint:'연속 홀수: x, x+2 → x+(x+2)=48', sol:'2x + 2 = 48 → 2x = 46 → x = 23'},
+  {id:20, lv:'high', q:'정가의 20%를 할인한 가격이 8000원이다.\n정가 x원을 구하시오.', ans:'10000', hint:'x - 0.2x = 8000 → 0.8x = 8000', sol:'0.8x = 8000 → x = 10000'},
+];
+
+// ============================================================
+//  타이머
+// ============================================================
+const T={start:Date.now(),elapsed:0,running:true,iv:null,done:new Array(20).fill(false),laps:[]};
+function fmtT(ms){const s=Math.floor(ms/1000);return pad(Math.floor(s/60))+':'+pad(s%60);}
+function pad(n){return String(n).padStart(2,'0');}
+function tick(){if(!T.running)return;T.elapsed=Date.now()-T.start;document.getElementById('tmr').textContent=fmtT(T.elapsed);}
+T.iv=setInterval(tick,500); tick();
+
+function markDone(qid){
+  if(T.done[qid-1]) return;
+  T.done[qid-1]=true;
+  T.laps.push({qid,t:T.elapsed});
+  const n=T.done.filter(Boolean).length;
+  document.getElementById('tmr-stat').textContent=n+' / 20 완료';
+  if(n===20){T.running=false;clearInterval(T.iv);setTimeout(showPopup,500);}
+}
+
+// ============================================================
+//  상태
+// ============================================================
+const ST={}; // {[id]: {ans:'', tried:false, correct:false}}
+QS.forEach(q=>{ST[q.id]={ans:'',tried:false,correct:false};});
+const PEN={}; // 풀이 노트 펜 상태
+const COLORS=['#0f172a','#dc2626','#1d4ed8','#059669'];
+let curFilter='all';
+
+// ============================================================
+//  렌더링
+// ============================================================
+function render(){
+  const wrap=document.getElementById('qwrap');
+  wrap.innerHTML='';
+  const list=curFilter==='all'?QS:QS.filter(q=>q.lv===curFilter);
+  list.forEach((q,idx)=>{
+    const prevId=list[idx-1]?.id;
+    const locked=prevId&&!ST[prevId].correct;
+    wrap.appendChild(makeCard(q,locked));
+  });
+  updateProg();
+}
+
+function makeCard(q, locked){
+  const st=ST[q.id];
+  const div=document.createElement('div');
+  div.id='card-'+q.id;
+  div.className='qcard'+(st.correct?' correct':st.tried?' wrong':'')+(locked?' locked':'');
+
+  const lvMap={low:['하','low'],mid:['중','mid'],high:['상','high']};
+  const [lvTxt,lvCls]=lvMap[q.lv];
+  const numCls=q.lv==='low'?'':q.lv;
+
+  // 잠금 상태
+  if(locked){
+    div.innerHTML=`
+      <div class="qhead">
+        <div class="qnum ${numCls}">${q.id}</div>
+        <div class="qlv ${lvCls}">${lvTxt}</div>
+      </div>
+      <div class="lock-badge">🔒 이전 문제를 먼저 풀어야 열립니다</div>`;
+    return div;
+  }
+
+  const inpCls=st.tried?(st.correct?'correct':'wrong'):'';
+  const dis=st.correct?'disabled':'';
+
+  let resultHTML='';
+  if(st.tried){
+    if(st.correct){
+      // 정답: 풀이 공개
+      resultHTML=`<div class="result ok">✅ 정답입니다!&nbsp; <small style="font-weight:400">${q.sol||''}</small></div>`;
+    } else {
+      // 오답: 정답·풀이 숨김, 다시 시도 안내만
+      resultHTML=`<div class="result ng">❌ 틀렸어요. 힌트를 참고해서 다시 풀어보세요!</div>`;
+    }
+  }
+
+  // 문제 텍스트 (개행 처리)
+  const qtxtLines=q.q.split('\n').join('<br>');
+
+  div.innerHTML=`
+    <div class="qhead">
+      <div class="qnum ${numCls}">${q.id}</div>
+      <div style="flex:1;margin-left:6px;font-size:12px;font-weight:600;color:#64748b">문제 ${q.id}</div>
+      <div class="qlv ${lvCls}">${lvTxt}</div>
+    </div>
+    <div class="qbody">
+      <div class="qtxt"><span class="eq">${qtxtLines}</span></div>
+      <div class="hint">💡 힌트: ${q.hint}</div>
+      <div class="ans-row">
+        <span class="ans-lbl">x =</span>
+        <input class="ans-inp ${inpCls}" id="inp-${q.id}" type="text"
+          placeholder="정답" ${dis} value="${st.ans}"
+          onkeydown="if(event.key==='Enter')check(${q.id})">
+        <button class="chkbtn" id="btn-${q.id}" onclick="check(${q.id})" ${dis}>확인</button>
+      </div>
+      ${resultHTML}
+      <!-- 풀이 노트 -->
+      <div class="note-toggle" id="ntog-${q.id}" onclick="toggleNote(${q.id})">
+        <span class="arr">▶</span> ✏️ 풀이 노트 (손글씨)
+      </div>
+      <div class="note-area" id="narea-${q.id}">
+        <div class="note-toolbar" id="ntb-${q.id}">
+          <span style="font-size:11px;color:#78350f;font-weight:600">굵기</span>
+          <div class="psz on" id="ps-${q.id}-2" onclick="setPen(${q.id},2)"><div class="pdot" style="width:4px;height:4px"></div></div>
+          <div class="psz" id="ps-${q.id}-5" onclick="setPen(${q.id},5)"><div class="pdot" style="width:8px;height:8px"></div></div>
+          <div class="psz" id="ps-${q.id}-9" onclick="setPen(${q.id},9)"><div class="pdot" style="width:13px;height:13px"></div></div>
+          <span style="font-size:11px;color:#78350f;font-weight:600;margin-left:6px">색</span>
+          <div class="cbtn on" id="cb-${q.id}-0" style="background:#0f172a" onclick="setColor(${q.id},0)"></div>
+          <div class="cbtn" id="cb-${q.id}-1" style="background:#dc2626" onclick="setColor(${q.id},1)"></div>
+          <div class="cbtn" id="cb-${q.id}-2" style="background:#1d4ed8" onclick="setColor(${q.id},2)"></div>
+          <div class="cbtn" id="cb-${q.id}-3" style="background:#059669" onclick="setColor(${q.id},3)"></div>
+          <button class="clr-btn2" onclick="clearNote(${q.id})">🗑 지우기</button>
+        </div>
+        <div class="note-cv-wrap"><canvas class="note-cv" id="nc-${q.id}" height="130"></canvas></div>
+      </div>
+    </div>`;
+
+  setTimeout(()=>initNote(q.id), 40);
+  return div;
+}
+
+// ============================================================
+//  정답 확인
+// ============================================================
+function check(id){
+  const q=QS.find(q=>q.id===id);
+  const inp=document.getElementById('inp-'+id);
+  const raw=inp.value.trim().replace(/\s/g,'');
+  if(!raw){inp.focus();return;}
+  // 정답 비교 (숫자면 수치 비교, 아니면 문자 비교)
+  const userNum=parseFloat(raw.replace('x=','').replace('x =',''));
+  const ansNum=parseFloat(q.ans);
+  const correct=(!isNaN(userNum)&&!isNaN(ansNum))
+    ? Math.abs(userNum-ansNum)<0.01
+    : raw===String(q.ans).replace(/\s/g,'');
+
+  ST[id]={ans:raw, tried:true, correct};
+  if(correct) markDone(id);
+
+  // 카드 새로 그리기
+  const old=document.getElementById('card-'+id);
+  const locked=old.classList.contains('locked');
+  const newCard=makeCard(q,false);
+  old.parentNode.replaceChild(newCard,old);
+  initNote(id);
+  updateProg();
+
+  if(correct){
+    // 다음 문제 잠금 해제 & 스크롤
+    const list=curFilter==='all'?QS:QS.filter(q=>q.lv===curFilter);
+    const idx=list.findIndex(qq=>qq.id===id);
+    if(idx<list.length-1){
+      const nextId=list[idx+1].id;
+      setTimeout(()=>{
+        // 다음 카드 재렌더 (잠금 해제)
+        const nextQ=QS.find(q=>q.id===nextId);
+        const nextOld=document.getElementById('card-'+nextId);
+        if(nextOld){
+          const newNext=makeCard(nextQ,false);
+          nextOld.parentNode.replaceChild(newNext,nextOld);
+          initNote(nextId);
+          setTimeout(()=>{
+            newNext.scrollIntoView({behavior:'smooth',block:'start'});
+            document.getElementById('inp-'+nextId)?.focus();
+          },200);
+        }
+      },300);
+    }
+  }
+}
+
+// ============================================================
+//  진행도 업데이트
+// ============================================================
+function updateProg(){
+  const tot=QS.length;
+  const tried=Object.values(ST).filter(s=>s.tried).length;
+  const correct=Object.values(ST).filter(s=>s.correct).length;
+  document.getElementById('pg-txt').textContent=`${tried} / ${tot} 풀이 완료`;
+  document.getElementById('pg-score').textContent=`정답 ${correct}개`;
+  document.getElementById('pg-fill').style.width=(tried/tot*100)+'%';
+}
+
+// ============================================================
+//  레벨 필터
+// ============================================================
+function setFilter(lv){
+  curFilter=lv;
+  document.querySelectorAll('.ltab').forEach((el,i)=>{
+    el.classList.toggle('on',['all','low','mid','high'][i]===lv);
+  });
+  render();
+}
+
+// ============================================================
+//  팝업
+// ============================================================
+function showPopup(){
+  document.getElementById('pop-total').textContent=fmtT(T.elapsed);
+  const lvName={low:'하',mid:'중',high:'상'};
+  // 구간별 시간
+  const secTimes={low:[],mid:[],high:[]};
+  T.laps.forEach(l=>{const q=QS.find(q=>q.id===l.qid);if(q)secTimes[q.lv].push(l.t);});
+  let html='';
+  QS.forEach(q=>{
+    const lap=T.laps.find(l=>l.qid===q.id);
+    if(lap) html+=`<span>[${q.id}번]</span> ${fmtT(lap.t)}<br>`;
+  });
+  document.getElementById('pop-laps').innerHTML=html||'';
+  document.getElementById('popup').style.display='flex';
+}
+function closePopup(){document.getElementById('popup').style.display='none';}
+
+// ============================================================
+//  손글씨 노트
+// ============================================================
+function initNote(id){
+  const cv=document.getElementById('nc-'+id);
+  if(!cv)return;
+  const wrap=cv.parentElement;
+  const W=wrap.clientWidth||300;
+  cv.width=W; cv.height=130; cv.style.width=W+'px';
+  PEN[id]={drawing:false,color:'#0f172a',size:2};
+  const ctx=cv.getContext('2d');
+  ctx.lineCap='round';ctx.lineJoin='round';
+  function pos(e){
+    const r=cv.getBoundingClientRect();
+    const t=e.touches?e.touches[0]:e;
+    return{x:(t.clientX-r.left)*(cv.width/r.width),
+           y:(t.clientY-r.top)*(cv.height/r.height)};
+  }
+  function dn(e){e.preventDefault();const p=pos(e);PEN[id].drawing=true;ctx.beginPath();ctx.moveTo(p.x,p.y);}
+  function mv(e){e.preventDefault();if(!PEN[id].drawing)return;const p=pos(e);ctx.strokeStyle=PEN[id].color;ctx.lineWidth=PEN[id].size;ctx.lineTo(p.x,p.y);ctx.stroke();}
+  function up(e){e.preventDefault();PEN[id].drawing=false;}
+  cv.addEventListener('mousedown',dn);cv.addEventListener('mousemove',mv);
+  cv.addEventListener('mouseup',up);cv.addEventListener('mouseleave',up);
+  cv.addEventListener('touchstart',dn,{passive:false});
+  cv.addEventListener('touchmove',mv,{passive:false});
+  cv.addEventListener('touchend',up,{passive:false});
+}
+function setPen(id,sz){
+  if(PEN[id])PEN[id].size=sz;
+  [2,5,9].forEach(s=>{document.getElementById('ps-'+id+'-'+s)?.classList.toggle('on',s===sz);});
+}
+function setColor(id,idx){
+  if(PEN[id])PEN[id].color=COLORS[idx];
+  [0,1,2,3].forEach(i=>{document.getElementById('cb-'+id+'-'+i)?.classList.toggle('on',i===idx);});
+}
+function clearNote(id){
+  const cv=document.getElementById('nc-'+id);
+  if(cv){const ctx=cv.getContext('2d');ctx.clearRect(0,0,cv.width,cv.height);}
+}
+function toggleNote(id){
+  const a=document.getElementById('narea-'+id);
+  const t=document.getElementById('ntog-'+id);
+  const open=a.classList.toggle('open');
+  t.classList.toggle('open',open);
+  if(open)setTimeout(()=>initNote(id),30);
+}
+
+// ============================================================
+//  초기화
+// ============================================================
+window.addEventListener('resize',()=>QS.forEach(q=>initNote(q.id)));
+render();
+</script>
+</body>
+</html>
